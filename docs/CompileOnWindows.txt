@@ -1,0 +1,12 @@
+1. Install Cygwin 
+	-diffutils
+	-gcc
+	-make
+	-ncurses
+	-libncurses-devel
+	-git 
+2. Set CYGPATH
+export CYGPATH=E:/Work/cygwin64/bin/cygpath
+3. CROSS_COMPILE=arm-none-linux-gnueabi-
+4. make ARCH=arm vexpress-a15-defconfig
+5. make
