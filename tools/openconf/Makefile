@@ -74,7 +74,7 @@ endif
 check-lxdialog  := ./lxdialog/check-lxdialog.sh
 
 # Select the compiler needed to build binaries for your development system
-HOST_CC     = gcc
+HOST_CC     = $(HOST_COMPILE)gcc
 HOST_CFLAGS = -O2 -Wall
 
 # Use recursively expanded variables so we do not call gcc unless

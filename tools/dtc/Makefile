@@ -34,6 +34,7 @@ dtc-deps-y =$(src_dir)/dtc-lexer.lex.c
 dtc-deps-y+=$(src_dir)/dtc-parser.tab.c
 dtc-deps-y+=$(src_dir)/dtc-parser.tab.h
 
+
 dtc-objs-y =$(build_dir)/dtc.o
 dtc-objs-y+=$(build_dir)/flattree.o
 dtc-objs-y+=$(build_dir)/fstree.o
@@ -45,11 +46,12 @@ dtc-objs-y+=$(build_dir)/checks.o
 dtc-objs-y+=$(build_dir)/util.o
 dtc-objs-y+=$(build_dir)/dtc-parser.tab.o
 dtc-objs-y+=$(build_dir)/dtc-lexer.lex.o
+dtc-objs-y+=$(build_dir)/asprintf.o
 
 dtc-cp=cp
-dtc-cc=gcc
+dtc-cc=$(HOST_COMPILE)gcc
 dtc-cflags=-I$(src_dir)/libfdt
-dtc-ld=gcc
+dtc-ld=$(HOST_COMPILE)gcc
 dtc-ldflags=
 dtc-lex=flex
 dtc-yacc=bison

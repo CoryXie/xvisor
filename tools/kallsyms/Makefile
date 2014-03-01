@@ -35,9 +35,9 @@ targets-y=$(build_dir)/kallsyms
 kallsyms-deps-y =
 kallsyms-objs-y =$(build_dir)/kallsyms.o
 
-host-cc=gcc
+host-cc=$(HOST_COMPILE)gcc
 host-cflags=-g
-host-ld=gcc
+host-ld=$(HOST_COMPILE)gcc
 host-ldflags=
 
 .PHONY: all

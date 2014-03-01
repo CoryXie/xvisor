@@ -32,9 +32,9 @@ targets-y=$(build_dir)/bb_nandflash_ecc
 bb_nandflash_ecc-deps-y =
 bb_nandflash_ecc-objs-y =$(build_dir)/bb_nandflash_ecc.o
 
-host-cc=gcc
+host-cc=$(HOST_COMPILE)gcc
 host-cflags=-g
-host-ld=gcc
+host-ld=$(HOST_COMPILE)gcc
 host-ldflags=
 
 .PHONY: all

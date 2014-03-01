@@ -33,9 +33,9 @@ cpatch32-deps-y =$(src_dir)/../../libs/include/libs/elf.h $(src_dir)/libelf32.h
 cpatch32-objs-y =$(build_dir)/libelf32.o
 cpatch32-objs-y+=$(build_dir)/cpatch32.o
 
-host-cc=gcc
+host-cc=$(HOST_COMPILE)gcc
 host-cflags=-g -I$(src_dir)/../../libs/include
-host-ld=gcc
+host-ld=$(HOST_COMPILE)gcc
 host-ldflags=
 
 .PHONY: all
