@@ -46,7 +46,10 @@ dtc-objs-y+=$(build_dir)/checks.o
 dtc-objs-y+=$(build_dir)/util.o
 dtc-objs-y+=$(build_dir)/dtc-parser.tab.o
 dtc-objs-y+=$(build_dir)/dtc-lexer.lex.o
+
+ifdef MINGW
 dtc-objs-y+=$(build_dir)/asprintf.o
+endif
 
 dtc-cp=cp
 dtc-cc=$(HOST_COMPILE)gcc

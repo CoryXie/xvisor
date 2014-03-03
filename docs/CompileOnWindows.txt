@@ -5,8 +5,11 @@
 	-ncurses
 	-libncurses-devel
 	-git 
-2. Set CYGPATH
-export CYGPATH=E:/Work/cygwin64/bin/cygpath
-3. export CROSS_COMPILE=arm-none-linux-gnueabi-
-4. make ARCH=arm vexpress-a15-defconfig
-5. make
+2. # export CYGPATH=E:/Work/cygwin64/bin/cygpath
+3. # export CROSS_COMPILE=arm-none-linux-gnueabi-
+4. # make ARCH=arm vexpress-a15-defconfig or make ARCH=arm vexpress-a9-defconfig
+5. # make
+6. # cd build;
+7. # arm-none-linux-gnueabi-gcc -nostdlib -mcpu=cortex-a15 -e start_boot -Wl,-Ttext=0x80000000 -DSPIN_LOOP_ADDR=0x84000000 -DIMAGE=vmm.bin -DVEXPRESS_A15  ../docs/arm/fast_model_boot.S -o fast_model_boot.axf
+or
+   # arm-none-linux-gnueabi-gcc -nostdlib -mcpu=cortex-a9 -e start_boot -Wl,-Ttext=0x80000000 -DSPIN_LOOP_ADDR=0x84000000 -DIMAGE=vmm.bin -DVEXPRESS_A9  ../docs/arm/fast_model_boot.S -o fast_model_boot.axf

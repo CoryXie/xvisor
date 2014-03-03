@@ -186,8 +186,10 @@ hvc_thyp_call:
 	/* Yeppie! in hypervisor mode */
 	mrs	r0, cpsr_all
 	msr	spsr_hyp, r0
-	msr	elr_hyp, r12
-	eret
+	msr	elr_hyp, r12 /* r12 saved at enter_hvc_mode */
+	eret /* ERET performs a return from an exception taken to Hyp mode.
+	      * When executed in Hyp mode, ERET loads the PC from ELR_hyp and
+	      * loads the CPSR from SPSR_hyp.   */
 enter_hvc_mode_start:
 	/* Get temp monitor vector base address */
 	ldr	r0, __hvc_texec_table

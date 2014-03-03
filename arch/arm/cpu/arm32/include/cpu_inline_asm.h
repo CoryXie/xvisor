@@ -98,8 +98,30 @@ static inline u16 rev16(u16 v)
 #define ldrex(addr, data)	asm volatile("ldrex	%0, [%1]\n\t" \
 				: "=r"(data) : "r"(addr))
 
+/* 
+ * Fix a compilation error: 
+ *
+ * Error: registers may not be the same -- `strex r3,r3,[r2]'
+ *
+ * See http://gcc.gnu.org/ml/gcc-help/2010-08/msg00305.html
+ *
+ *> Its compilation fails as strex cannot have same register as first 2 operands.
+ *
+ *> Compilation does pass if we also specify %0 with the additional constraint &.
+ *> That is     "=&r"(res)
+ *
+ *> Is gcc not smart enough to recognise that strex cannot use same
+ *> register for both operands ?
+ *
+ * No. gcc just treats asm operands as strings. If you want the registers
+ * to be unique and not shared between inputs and output, you have to tell
+ * gcc that.
+ *
+ * You've discovered a good use for an earlyclobber, so use "&", that's
+ * what it is for.  This is not a bug in gcc.
+ */
 #define strex(addr, data, res)	asm volatile("strex	%0, %1, [%2]\n\t" \
-				: "=r"(res) : "r"(data), "r"(addr))
+				: "=&r"(res) : "r"(data), "r"(addr))
 
 #define clrex()			asm volatile("clrex\n\t")
 
