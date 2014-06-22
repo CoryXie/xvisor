@@ -252,6 +252,32 @@ _start_mmu_tmpl1_set:
 	add	r1, r1, #4
 	cmp	r1, r2
 	blt	_start_mmu_tmpl1_set
+	
+#ifdef CONFIG_BOARD_IMX61
+	ldr	r3, __mmu_dev_section_attr
+	
+	/* r1 -> IMX6_DEV_BASE1 */
+	ldr	r1, IMX6_DEV_BASE1
+	mov     r4, r1
+	lsr	r1, #18 	/* r1 >> 20, r1 << 2 */
+	add	r1, r0, r1
+	/* Setup IMX6_DEV_BASE1 entry */
+	orr	r2, r3, r4
+	str	r2, [r1]
+
+	/* r1 -> IMX6_DEV_BASE2 */
+	ldr	r1, IMX6_DEV_BASE2
+	mov     r4, r1
+	lsr	r1, #18 	/* r1 >> 20, r1 << 2 */
+	add	r1, r0, r1
+	/* Setup IMX6_DEV_BASE1 entry */
+	orr	r2, r3, r4
+	str	r2, [r1]
+        
+    mov    r4, #'B'
+    ldr    r5, =0x2020040
+    str    r4, [r5]
+#endif /* CONFIG_BOARD_IMX61 */
 
 	/*
 	 * Secondary CPU startup code 
@@ -266,10 +292,23 @@ _start_secondary:
 	/* Setup Domain Control Register */
 	ldr	r1, __dacr_mmu_val
 	mcr	p15, 0, r1, c3, c0, 0
+	
+#ifdef CONFIG_BOARD_IMX61
+    mov    r4, #'C'
+    ldr    r5, =0x2020040
+    str    r4, [r5]
+#endif /* CONFIG_BOARD_IMX61 */
 
-	/* Setup System Control Register */
+    /* Setup System Control Register */
 	bl	proc_setup
 	mcr	p15, 0, r0, c1, c0, 0
+
+#ifdef CONFIG_BOARD_IMX61
+
+    mov    r4, #'E'
+    ldr    r5, =0x2020040
+    str    r4, [r5]
+#endif /* CONFIG_BOARD_IMX61 */
 
 	/* Jump to reset code */
 	ldr	pc, __reset
@@ -289,7 +328,23 @@ _start_hang:
 			TTBL_L1TBL_TTE_ARCH_ATTR | \
 			TTBL_L1TBL_TTE_TYPE_SECTION)
 
+#define DEV_SECTION_ATTR 	((TTBL_AP_SRW_U << TTBL_L1TBL_TTE_AP_SHIFT) | \
+			(TTBL_L1TBL_TTE_DOM_RESERVED << TTBL_L1TBL_TTE_DOM_SHIFT) | \
+			TTBL_L1TBL_TTE_B_MASK | \
+			TTBL_L1TBL_TTE_TYPE_SECTION)
+			
 #define FDT_MAGIC	0xedfe0dd0	/* 0xd00dfeed in big-endian */
+
+#ifdef CONFIG_BOARD_IMX61
+
+IMX6_DEV_BASE1:
+    .long 0x02000000
+IMX6_DEV_BASE2:
+    .long 0x02100000
+__mmu_dev_section_attr:
+	.word DEV_SECTION_ATTR	
+	
+#endif /* CONFIG_BOARD_IMX61 */
 
 __fdt_magic:
 	.word FDT_MAGIC
@@ -538,10 +593,23 @@ _reset:
 	mul	r9, r9, r10
 	sub	sp, sp, r9
 #endif
+
+#ifdef CONFIG_BOARD_IMX61
+    mov    r4, #'F'
+    ldr    r5, =0x2020040
+    str    r4, [r5]
+#endif /* CONFIG_BOARD_IMX61 */
+
 	/* Set to Supervisor Mode */
 	CMODE	r8, CPSR_MODE_SUPERVISOR
+
 	/* Call CPU init function */
 	b	cpu_init
+
+    mov    r4, #'S'
+    ldr    r5, =0x2020040
+    str    r4, [r5]
+	
 	/* We should never reach here */
 	b	.
 

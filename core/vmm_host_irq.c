@@ -26,6 +26,7 @@
 #include <vmm_smp.h>
 #include <vmm_heap.h>
 #include <vmm_host_irq.h>
+#include <vmm_stdio.h>
 #include <arch_cpu_irq.h>
 #include <arch_host_irq.h>
 #include <libs/stringlib.h>
@@ -365,6 +366,7 @@ int __cpuinit vmm_host_irq_init(void)
 				  ARCH_HOST_IRQ_COUNT);
 
 		if (!hirqctrl.irq) {
+            vmm_printf("vmm_host_irq_init...vmm_malloc FAIL\n");
 			return VMM_ENOMEM;
 		}
 
@@ -387,16 +389,22 @@ int __cpuinit vmm_host_irq_init(void)
 
 	/* Initialize board specific PIC */
 	if ((ret = arch_host_irq_init())) {
+        vmm_printf("vmm_host_irq_init...arch_host_irq_init FAIL\n");
 		return ret;
 	}
 
 	/* Setup interrupts in CPU */
 	if ((ret = arch_cpu_irq_setup())) {
+        vmm_printf("vmm_host_irq_init...arch_cpu_irq_setup FAIL\n");
 		return ret;
 	}
 
 	/* Enable interrupts in CPU */
 	arch_cpu_irq_enable();
+
+#if defined(CONFIG_VERBOSE_MODE)
+    vmm_printf("vmm_host_irq_init...OK\n");
+#endif
 
 	return VMM_OK;
 }

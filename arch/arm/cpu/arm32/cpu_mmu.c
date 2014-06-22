@@ -679,6 +679,11 @@ int cpu_mmu_map_page(struct cpu_l1tbl *l1, struct cpu_page *pg)
 		rc = VMM_EFAIL;
 		goto mmu_map_return;
 	}
+    
+#if defined(CONFIG_VERBOSE_MODE)
+    vmm_printf("cpu_mmu_map_page...pa 0x%x va 0x%x sz 0x%x\n", 
+        pg->pa, pg->va, pg->sz);
+#endif 
 
 	/* Get the l1 TBL location */
 	l1_tte = (u32 *) (l1->tbl_va +
@@ -692,12 +697,14 @@ int cpu_mmu_map_page(struct cpu_l1tbl *l1, struct cpu_page *pg)
 		/* we need to check that the requested area is not already
 		 * mapped
 		 */
-#if defined(CONFIG_ARMV5)
-		if (l1_tte_type == TTBL_L1TBL_TTE_TYPE_COARSE_L2TBL) {
-#else
-		if (l1_tte_type == TTBL_L1TBL_TTE_TYPE_L2TBL) {
-#endif
-			minpgsz = TTBL_L2TBL_SMALL_PAGE_SIZE;
+		if (l1_tte_type == 
+                #if defined(CONFIG_ARMV5)
+                TTBL_L1TBL_TTE_TYPE_COARSE_L2TBL
+                #else
+                TTBL_L1TBL_TTE_TYPE_L2TBL
+                #endif
+                ) {     
+            minpgsz = TTBL_L2TBL_SMALL_PAGE_SIZE;
 		} else {
 			minpgsz = TTBL_L1TBL_SECTION_PAGE_SIZE;
 			rc = VMM_EFAIL;
@@ -707,6 +714,7 @@ int cpu_mmu_map_page(struct cpu_l1tbl *l1, struct cpu_page *pg)
 		pgva = pgva & ~(minpgsz - 1);
 		pgsz = pg->sz;
 		while (pgsz) {
+            
 			if (!cpu_mmu_get_page(l1, pgva, &upg)) {
 				rc = VMM_EFAIL;
 				goto mmu_map_return;
@@ -1786,6 +1794,10 @@ int __init arch_cpu_aspace_primary_init(physical_addr_t *core_resv_pa,
 
 	/* If possible remove boot-time identity mappings */
 	if (arch_code_paddr_start() != arch_code_vaddr_start()) {
+#if defined(CONFIG_VERBOSE_MODE)
+        vmm_printf("arch_code_paddr_start 0x%x != arch_code_vaddr_start 0x%x\n",
+            arch_code_paddr_start(), arch_code_vaddr_start());
+#endif        
 		val = arch_code_paddr_start() >> TTBL_L1TBL_TTE_OFFSET_SHIFT;
 		val = val << 2;
 		*((u32 *)(mmuctrl.defl1.tbl_va + val)) = 0x0;
@@ -1813,6 +1825,13 @@ int __init arch_cpu_aspace_primary_init(physical_addr_t *core_resv_pa,
 	pa = arch_code_paddr_start();
 	va = arch_code_vaddr_start();
 	sz = arch_code_size();
+
+#if defined(CONFIG_VERBOSE_MODE)
+
+    vmm_printf("arch_code_paddr_start 0x%x, arch_code_vaddr_start 0x%x, size 0x%x\n",
+        pa, va, sz);
+#endif
+
 	if ((va <= resv_va) && (resv_va < (va + sz))) {
 		resv_va = va + sz;
 	} else if ((va <= (resv_va + resv_sz)) && 
@@ -1875,6 +1894,14 @@ int __init arch_cpu_aspace_primary_init(physical_addr_t *core_resv_pa,
 	pa = resv_pa;
 	va = resv_va;
 	sz = resv_sz;
+
+#if defined(CONFIG_VERBOSE_MODE)
+    vmm_printf("resv_pa 0x%x, resv_va 0x%x, resv_sz 0x%x\n",
+        pa, va, sz);
+#endif
+
+    i = 0;
+    
 	while (sz) {
 		memset(&respg, 0, sizeof(respg));
 #if defined(CONFIG_ARMV5)
@@ -1899,12 +1926,21 @@ int __init arch_cpu_aspace_primary_init(physical_addr_t *core_resv_pa,
 		respg.s = 0;
 		respg.ng = 0;
 #endif
+
+#if defined(CONFIG_VERBOSE_MODE)
+        vmm_printf("cpu_mmu_map_reserved_page...(%d), pa 0x%x va 0x%x sz 0x%x\n",
+            i, pa, va, sz);
+#endif
+
 		if ((rc = cpu_mmu_map_reserved_page(&respg))) {
+            vmm_printf("cpu_mmu_map_reserved_page...FAIL, pa 0x%x va 0x%x sz 0x%x\n",
+                pa, va, sz);
 			goto mmu_init_error;
 		}
 		sz -= TTBL_L1TBL_SECTION_PAGE_SIZE;
 		pa += TTBL_L1TBL_SECTION_PAGE_SIZE;
 		va += TTBL_L1TBL_SECTION_PAGE_SIZE;
+        i++;
 	}
 
 	/* Setup up l1 array */

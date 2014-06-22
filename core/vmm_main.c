@@ -55,6 +55,8 @@
 
 void __noreturn vmm_hang(void)
 {
+	vmm_printf("vmm_hang!\n");
+    dump_stacktrace();
 	while (1) ;
 }
 

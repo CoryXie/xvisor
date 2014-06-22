@@ -1,0 +1,98 @@
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	model = "SD";
+
+	chosen { };
+	aliases { };
+
+	cpus {
+		cpu0 {
+			device_type = "cpu";
+			model = "Cortex-A9";
+		};
+
+		cpu1 {
+			device_type = "cpu";
+			model = "Cortex-A9";
+		};
+		
+		cpu2 {
+			device_type = "cpu";
+			model = "Cortex-A9";
+		};
+
+		cpu3 {
+			device_type = "cpu";
+			model = "Cortex-A9";
+		};		
+	};
+
+	memory {
+		device_type = "memory"; 
+		reg = <0x10000000 0x10000000>; /* on board DDR 1GB, but limit to 256MB */
+	};
+
+	scu { /* Snoop Control Unit */
+		device_type = "scu";
+		compatible = "arm,a9mpcore-priv";
+		reg = <0x00A00000 0x1000>;
+	};
+
+	src { /* System Reset Controller (SRC) */
+		device_type = "src";
+		compatible = "fsl,imx6-src";
+		reg = <0x20D8000 0x100>;
+	};
+	
+	gic {
+		device_type = "pic";
+		compatible = "arm,cortex-a9-gic";
+		reg = <0x00a01000 0x1000 0x00a00100 0x100>;
+		irq_start = <16>;
+	};
+	
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+
+		epit1 {
+	      	device_type = "timer";
+			compatible = "freescale,epit-timer";
+			reg = <0x20d0000 0x4000>;
+			clock-frequency = <66000000>;
+			timer_num = <0>;
+			interrupts = <88>;
+		};
+
+		epit2 {
+	      	device_type = "timer";
+			compatible = "freescale,epit-timer";
+			reg = <0x20d4000 0x4000>;
+			clock-frequency = <66000000>;
+			timer_num = <1>;
+			interrupts = <89>;
+		};
+
+		gpt {
+	      	device_type = "timer";
+			compatible = "freescale,gpt-timer";
+			reg = <0x2098000 0x4000>;
+			clock-frequency = <66000000>;
+			timer_num = <2>;
+			interrupts = <87>;
+		};
+
+		SERIAL1: uart1 {
+	      	device_type = "serial";
+	      	compatible = "freescale,imx-uart";
+	      	reg = <0x02020000 0x100>;
+			clock-frequency = <80000000>;
+	      	baudrate = <115200>;
+			interrupts = <58>;
+		};	
+	};
+};
+

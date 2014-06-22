@@ -216,9 +216,9 @@ u8 imx_lowlevel_getc(virtual_addr_t base)
 
 bool imx_lowlevel_can_putc(virtual_addr_t base)
 {
-	u32 status = vmm_readl((void *)(base + USR1));
+	u32 status = vmm_readl((void *)(base + USR2));
 
-	if (~status & USR1_TRDY) {
+	if (~status & USR2_TXDC) {
 		return FALSE;
 	} else {
 		return TRUE;
@@ -237,43 +237,15 @@ void imx_lowlevel_putc(virtual_addr_t base, u8 ch)
 void imx_lowlevel_init(virtual_addr_t base, u32 baudrate, u32 input_clock)
 {
 	unsigned int temp = vmm_readl((void *)(base + UCR1));
-#if 0
-	unsigned int divider;
-	unsigned int remainder;
-#endif
 
 	/* First, disable everything */
 	temp &= ~UCR1_UARTEN;
 	vmm_writel(temp, (void *)base + UCR1);
 
-#if 0
-	/*
-	 * Set baud rate
-	 *
-	 * UBRDIV  = (UART_CLK / (16 * BAUD_RATE)) - 1
-	 * DIVSLOT = MOD(UART_CLK / BAUD_RATE, 16)
-	 */
-	temp = udiv32(input_clock, baudrate);
-	divider = udiv32(temp, 16) - 1;
-	remainder = umod32(temp, 16);
-
-	vmm_out_le16((void *)(base + S3C2410_UBRDIV), (u16)
-		     divider);
-	vmm_out_8((void *)(base + S3C2443_DIVSLOT), (u8)
-		  remainder);
-
-	/* Set the UART to be 8 bits, 1 stop bit, no parity */
-	vmm_out_le32((void *)(base + S3C2410_ULCON),
-		     S3C2410_LCON_CS8 | S3C2410_LCON_PNONE);
-
-	/* enable FIFO, set RX and TX trigger */
-	vmm_out_le32((void *)(base + S3C2410_UFCON), S3C2410_UFCON_DEFAULT);
-#else
 	/* enable the UART */
 	temp |= UCR1_RRDYEN | UCR1_RTSDEN | UCR1_UARTEN;
 
 	vmm_writel(temp, (void *)(base + UCR1));
-#endif
 }
 
 #if defined(UART_IMX_USE_TXINTR)
@@ -451,8 +423,10 @@ static int imx_driver_probe(struct vmm_device *dev,
 	if (rc) {
 		goto free_port;
 	}
+    
+	port->mask = vmm_readl((void *)port->base + UCR1);
 
-	port->mask = UCR1_RRDYEN | UCR1_RTSDEN;
+	port->mask |= UCR1_RRDYEN | UCR1_RTSDEN;
 
 #if defined(UART_IMX_USE_TXINTR)
 	port->mask |= UCR1_TRDYEN;
@@ -487,8 +461,6 @@ static int imx_driver_probe(struct vmm_device *dev,
 
 	/* Call low-level init function */
 	imx_lowlevel_init(port->base, port->baudrate, port->input_clock);
-
-	port->mask = vmm_readl((void *)port->base + UCR1);
 
 	rc = vmm_chardev_register(&port->cd);
 	if (rc) {

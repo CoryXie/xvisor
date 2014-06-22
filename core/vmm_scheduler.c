@@ -53,6 +53,7 @@ struct vmm_scheduler_ctrl {
 };
 
 static DEFINE_PER_CPU(struct vmm_scheduler_ctrl, sched);
+static int vmm_scheduler_init_done = 0;
 
 static struct vmm_vcpu *rq_dequeue(struct vmm_scheduler_ctrl *schedp)
 {
@@ -225,8 +226,11 @@ void vmm_scheduler_preempt_disable(void)
 	struct vmm_vcpu *vcpu;
 	struct vmm_scheduler_ctrl *schedp = &this_cpu(sched);
 
+    if (vmm_scheduler_init_done == 0)
+        return;
+    
 	arch_cpu_irq_save(flags);
-
+    
 	if (!schedp->irq_context) {
 		vcpu = schedp->current_vcpu;
 		if (vcpu) {
@@ -242,6 +246,9 @@ void vmm_scheduler_preempt_enable(void)
 	irq_flags_t flags;
 	struct vmm_vcpu *vcpu;
 	struct vmm_scheduler_ctrl *schedp = &this_cpu(sched);
+
+    if (vmm_scheduler_init_done == 0)
+        return;
 
 	arch_cpu_irq_save(flags);
 
@@ -590,6 +597,8 @@ int __cpuinit vmm_scheduler_init(void)
 	/* Create timer event and start it. (Per Host CPU) */
 	INIT_TIMER_EVENT(&schedp->ev, &vmm_scheduler_timer_event, schedp);
 
+    vmm_scheduler_init_done = 1;
+    
 	/* Create idle orphan vcpu with default time slice. (Per Host CPU) */
 	vmm_snprintf(vcpu_name, sizeof(vcpu_name), "idle/%d", cpu);
 	schedp->idle_vcpu = vmm_manager_vcpu_orphan_create(vcpu_name,

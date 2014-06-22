@@ -1,0 +1,43 @@
+
+/include/ "../imx61.dtsi"
+
+/ {
+	model = "sd";
+
+	chosen {
+		console = &SERIAL1;
+	};
+
+	memory {
+		device_type = "memory"; 
+		reg = <0x10000000 0x10000000>; /* on board DDR 1GB */
+	};
+
+	soc {
+		eth0 {
+			device_type = "nic";
+			compatible = "fsl,enet";
+			reg = <0x02188000 0xc000>;
+			interrupts = <150>;
+			switch = "netbridge0";
+			smsc,irq-active-high;
+		};
+	};
+
+	vmm {
+		net {
+			netbridge0 {
+				device_type = "netswitch";
+				compatible = "bridge";
+			};
+		};
+	};
+
+	/* Empty guests node */
+	guests {
+	};
+};
+
+/* Add guest templates */
+/include/ "../../../common/guests/realview-eb-mpcore.dtsi"
+

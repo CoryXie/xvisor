@@ -87,10 +87,18 @@ int __init arch_cpu_final_init(void)
 	return VMM_OK;
 }
 
+#if defined(ARCH_HAS_DEFTERM_EARLY_PRINT)
+extern void arch_defterm_early_putc(u8 ch);
+#endif
+
 void __init cpu_init(void)
 {
 #if defined(CONFIG_SMP)
 	u32 cpu = vmm_smp_processor_id();
+
+#if defined(ARCH_HAS_DEFTERM_EARLY_PRINT)
+    arch_defterm_early_putc('G'+cpu);
+#endif
 
 	if (!cpu) { /* Primary CPU */
 		vmm_init();

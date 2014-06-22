@@ -16,22 +16,19 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * @file arch_config.h
+ * @file gic_config.h
  * @author Anup Patel (anup@brainfault.org)
- * @brief config file for specifying arch specific optional features
- * 
+ * @brief GIC Configuration Header
  */
-#ifndef _ARCH_CONFIG_H__
-#define _ARCH_CONFIG_H__
+#ifndef __GIC_CONFIG_H__
+#define __GIC_CONFIG_H__
 
-#define ARCH_HAS_MEMORY_READ
-#define ARCH_HAS_MEMORY_WRITE
-
-#define ARCH_HAS_MEMCPY
-#define ARCH_HAS_MEMSET
-
-#ifdef CONFIG_BOARD_IMX61
-#define ARCH_HAS_DEFTERM_EARLY_PRINT
+#define GIC_NR_IRQS		256
+#if defined(CONFIG_CPU_CORTEX_A9)
+#define GIC_IRQ_START		29
+#else
+#define GIC_IRQ_START		26
 #endif
+#define GIC_MAX_NR		1
 
-#endif /* _ARCH_CONFIG_H__ */
+#endif /* __GIC_CONFIG_H__ */

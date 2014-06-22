@@ -104,17 +104,19 @@ proc_mmu_switch:
  *	- cache type register is implemented
  *
  *	Note: We blindly use all registers because this will be
- *	called at boot-time when there is not stack
+ *	called at boot-time when there is no stack
  */
 	.globl proc_setup
 proc_setup:
 #ifdef CONFIG_SMP
+
 #if defined(CONFIG_CPU_CORTEX_A9)
 	mov	r10, #(1 << 0)			@ TLB ops broadcasting
 #elif defined(CONFIG_CPU_CORTEX_A15)
 	mov	r10, #0
 #endif
 	mrc	p15, 0, r0, c1, c0, 1
+	
 #if 0
 	ALT_UP(mov	r0, #(1 << 6))		@ fake it for UP
 #endif
@@ -136,12 +138,14 @@ proc_setup:
 	ldr	r10, =0x00000c08		@ Cortex-A8 primary part number
 	teq	r0, r10
 	bne	2f
+	
 #ifdef CONFIG_ARM_ERRATA_430973
 	teq	r5, #0x00100000			@ only present in r1p*
 	mrceq	p15, 0, r10, c1, c0, 1		@ read aux control register
 	orreq	r10, r10, #(1 << 6)		@ set IBE to 1
 	mcreq	p15, 0, r10, c1, c0, 1		@ write aux control register
 #endif
+
 #ifdef CONFIG_ARM_ERRATA_458693
 	teq	r6, #0x20			@ only present in r2p0
 	mrceq	p15, 0, r10, c1, c0, 1		@ read aux control register
@@ -149,6 +153,7 @@ proc_setup:
 	orreq	r10, r10, #(1 << 9)		@ set PLDNOP to 1
 	mcreq	p15, 0, r10, c1, c0, 1		@ write aux control register
 #endif
+
 #ifdef CONFIG_ARM_ERRATA_460075
 	teq	r6, #0x20			@ only present in r2p0
 	mrceq	p15, 1, r10, c9, c0, 2		@ read L2 cache aux ctrl register
@@ -156,18 +161,21 @@ proc_setup:
 	orreq	r10, r10, #(1 << 22)		@ set the Write Allocate disable bit
 	mcreq	p15, 1, r10, c9, c0, 2		@ write the L2 cache aux ctrl register
 #endif
+
 	b	3f
 
 	/* Cortex-A9 Errata */
 2:	ldr	r10, =0x00000c09		@ Cortex-A9 primary part number
 	teq	r0, r10
 	bne	3f
+	
 #ifdef CONFIG_ARM_ERRATA_742230
 	cmp	r6, #0x22			@ only present up to r2p2
 	mrcle	p15, 0, r10, c15, c0, 1		@ read diagnostic register
 	orrle	r10, r10, #1 << 4		@ set bit #4
 	mcrle	p15, 0, r10, c15, c0, 1		@ write diagnostic register
 #endif
+
 #ifdef CONFIG_ARM_ERRATA_742231
 	teq	r6, #0x20			@ present in r2p0
 	teqne	r6, #0x21			@ present in r2p1
@@ -177,12 +185,14 @@ proc_setup:
 	orreq	r10, r10, #1 << 22		@ set bit #22
 	mcreq	p15, 0, r10, c15, c0, 1		@ write diagnostic register
 #endif
+
 #ifdef CONFIG_ARM_ERRATA_743622
 	teq	r5, #0x00200000			@ only present in r2p*
 	mrceq	p15, 0, r10, c15, c0, 1		@ read diagnostic register
 	orreq	r10, r10, #1 << 6		@ set bit #6
 	mcreq	p15, 0, r10, c15, c0, 1		@ write diagnostic register
 #endif
+
 #if defined(CONFIG_ARM_ERRATA_751472) && defined(CONFIG_SMP)
 	cmp	r6, #0x30			@ present prior to r3p0
 	mrclt	p15, 0, r10, c15, c0, 1		@ read diagnostic register
@@ -197,13 +207,16 @@ proc_setup:
 
 	adr	r5, v7_crval
 	ldmia	r5, {r5, r6}
+	
 #ifdef CONFIG_SWP_EMULATE
 	orr     r5, r5, #(1 << 10)              @ set SW bit in "clear"
 	bic     r6, r6, #(1 << 10)              @ clear it in "mmuset"
 #endif
+
    	mrc	p15, 0, r0, c1, c0, 0		@ read control register
 	bic	r0, r0, r5			@ clear bits them
 	orr	r0, r0, r6			@ set them
+
 	mov	pc, lr
 
 	/*   AT
@@ -215,6 +228,6 @@ proc_setup:
 	.align	2
 	.type	v7_crval, #object
 v7_crval:
-	.word	0x0120c302 /* clear */
+	.word	0x1120c302 /* clear */
 	.word	0x00c01c7d /* mmuset */
 

@@ -271,13 +271,29 @@ int __cpuinit vmm_host_aspace_init(void)
 	/* Determine VAPOOL house-keeping size based on VAPOOL size */
 	vapool_hksize = vmm_host_vapool_estimate_hksize(vapool_size);
 
+#if defined(CONFIG_VERBOSE_MODE)
+    vmm_printf("vapool_start=0x%x\n", vapool_start);
+    vmm_printf("vapool_size=0x%x\n", vapool_size);
+    vmm_printf("vapool_hksize=0x%x\n", vapool_hksize);
+#endif
+
 	/* Determine RAM start and size */
 	if ((rc = arch_devtree_ram_start(&ram_start))) {
 		return rc;
 	}
+    
+#if defined(CONFIG_VERBOSE_MODE)
+    vmm_printf("arch_devtree_ram_start ... OK, ram_start=0x%x\n", ram_start);
+#endif
+    
 	if ((rc = arch_devtree_ram_size(&ram_size))) {
 		return rc;
 	}
+    
+#if defined(CONFIG_VERBOSE_MODE)
+    vmm_printf("arch_devtree_ram_size ... OK, ram_size=0x%x\n", ram_size);
+#endif
+    
 	if (ram_start & VMM_PAGE_MASK) {
 		ram_size -= VMM_PAGE_SIZE;
 		ram_size += ram_start & VMM_PAGE_MASK;
@@ -290,6 +306,10 @@ int __cpuinit vmm_host_aspace_init(void)
 
 	/* Determine RAM house-keeping size based on RAM size */
 	ram_hksize = vmm_host_ram_estimate_hksize(ram_size);
+
+#if defined(CONFIG_VERBOSE_MODE)
+    vmm_printf("vmm_host_ram_estimate_hksize ... OK, ram_hksize=0x%x\n", ram_hksize);
+#endif
 
 	/* Calculate physical address, virtual address, and size of 
 	 * core reserved space for VAPOOL and RAM house-keeping
@@ -309,6 +329,14 @@ int __cpuinit vmm_host_aspace_init(void)
 	arch_resv_va = 0x0;
 	arch_resv_sz = 0x0;
 
+#if defined(CONFIG_VERBOSE_MODE)
+    vmm_printf("arch_cpu_aspace_primary_init ... start\n"
+        "...core_resv_pa=0x%x core_resv_va=0x%x core_resv_sz=0x%x\n"
+        "...arch_resv_pa=0x%x arch_resv_va=0x%x arch_resv_sz=0x%x\n",
+        core_resv_pa, core_resv_va, core_resv_sz,
+        arch_resv_pa, arch_resv_va, arch_resv_sz);
+#endif
+
 	/* Call arch_primary_cpu_aspace_init() with estimated parameters for core 
 	 * reserved space and arch reserved space. The arch_primary_cpu_aspace_init()
 	 * can change these parameter as per needed.
@@ -321,7 +349,17 @@ int __cpuinit vmm_host_aspace_init(void)
 						&arch_resv_sz))) {
 		return rc;
 	}
-	if (core_resv_sz < hk_total_size) {
+    
+#if defined(CONFIG_VERBOSE_MODE)
+
+    vmm_printf("arch_cpu_aspace_primary_init ... OK\n"
+        "...core_resv_pa=0x%x core_resv_va=0x%x core_resv_sz=0x%x\n"
+        "...arch_resv_pa=0x%x arch_resv_va=0x%x arch_resv_sz=0x%x\n",
+        core_resv_pa, core_resv_va, core_resv_sz,
+        arch_resv_pa, arch_resv_va, arch_resv_sz);
+#endif
+
+    if (core_resv_sz < hk_total_size) {
 		return VMM_EFAIL;
 	}
 	if ((vapool_size <= core_resv_sz) || 
@@ -338,11 +376,19 @@ int __cpuinit vmm_host_aspace_init(void)
 		return rc;
 	}
 
+#if defined(CONFIG_VERBOSE_MODE)
+    vmm_printf("vmm_host_vapool_init ... OK\n");
+#endif
+
 	/* Reserve pages used for code in VAPOOL */
 	if ((rc = vmm_host_vapool_reserve(arch_code_vaddr_start(), 
 					  arch_code_size()))) {
 		return rc;
 	}
+
+#if defined(CONFIG_VERBOSE_MODE)
+    vmm_printf("vmm_host_vapool_reserve ... OK\n");
+#endif
 
 	/* Reserve pages used for arch reserved space in VAPOOL */
 	if ((0x0 < arch_resv_sz) &&
@@ -350,6 +396,10 @@ int __cpuinit vmm_host_aspace_init(void)
 					   arch_resv_sz))) {
 		return rc;
 	}
+
+#if defined(CONFIG_VERBOSE_MODE)
+    vmm_printf("vmm_host_vapool_reserve ... OK\n");
+#endif
 
 	/* Initialize RAM managment */
 	if ((rc = vmm_host_ram_init(ram_start, 
@@ -360,11 +410,19 @@ int __cpuinit vmm_host_aspace_init(void)
 		return rc;
 	}
 
+#if defined(CONFIG_VERBOSE_MODE)
+    vmm_printf("vmm_host_ram_init ... OK\n");
+#endif
+
 	/* Reserve pages used for code in RAM */
 	if ((rc = vmm_host_ram_reserve(arch_code_paddr_start(), 
 				       arch_code_size()))) {
 		return rc;
 	}
+
+#if defined(CONFIG_VERBOSE_MODE)
+    vmm_printf("vmm_host_ram_reserve ... OK-1\n");
+#endif
 
 	/* Reserve pages used for arch reserved space in RAM */
 	if ((0x0 < arch_resv_sz) &&
@@ -373,6 +431,10 @@ int __cpuinit vmm_host_aspace_init(void)
 		return rc;
 	}
 
+#if defined(CONFIG_VERBOSE_MODE)
+    vmm_printf("vmm_host_ram_reserve ... OK-2\n");
+#endif
+
 	/* Setup temporary virtual address for physical read/write */
 	for (cpu = 0; cpu < CONFIG_CPU_COUNT; cpu++) {
 		rc = vmm_host_vapool_alloc(&host_mem_rw_va[cpu], 
@@ -380,6 +442,12 @@ int __cpuinit vmm_host_aspace_init(void)
 		if (rc) {
 			return rc;
 		}
+        
+#if defined(CONFIG_VERBOSE_MODE)
+    vmm_printf("vmm_host_vapool_alloc ... OK-cpu%d, host_mem_rw_va[%d]=0x%x\n", 
+        cpu, cpu, host_mem_rw_va[cpu]);
+#endif
+        
 	}
 
 	return VMM_OK;
