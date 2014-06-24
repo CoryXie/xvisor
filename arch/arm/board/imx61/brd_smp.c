@@ -55,7 +55,7 @@ int __init arch_smp_init_cpus(void)
 	int i, rc = VMM_OK;
 	struct vmm_devtree_node *node;
 
-	/* Get the PMU node in the dev tree */
+	/* Get the System Reset Controller (SRC) node in the dev tree */
 	node = vmm_devtree_getnode(VMM_DEVTREE_PATH_SEPARATOR_STRING "src");
 	if (!node) {
 		return VMM_EFAIL;
@@ -84,8 +84,8 @@ int __init arch_smp_init_cpus(void)
     
 	/* Update the cpu_possible bitmap based on SCU */
 	for (i = 0; i < CONFIG_CPU_COUNT; i++) {
-		if ((i < ncores) &&
-		    scu_cpu_core_is_smp((void *)scu_base, i)) {
+		if (i < ncores) {
+		    
 			vmm_set_cpu_possible(i, TRUE);
 		}
 	}
@@ -129,6 +129,11 @@ int __init arch_smp_prepare_cpus(unsigned int max_cpus)
 int __init arch_smp_start_cpu(u32 cpu)
 {
 	const struct vmm_cpumask *mask = get_cpu_mask(cpu);
+    u32 val;
+    
+    val = vmm_readl ((volatile void *)(src_base + SRC_SCR));
+    val |= (1 << (SRC_SCR_CORE1_ENABLE_OFFSET + (cpu - 1)));
+    vmm_writel (val, (volatile void *)(src_base + SRC_SCR));
 
 	/* Wakeup target cpu from wfe/wfi by sending an IPI */
 	gic_raise_softirq(mask, 0);

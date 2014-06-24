@@ -97,7 +97,7 @@ void __init cpu_init(void)
 	u32 cpu = vmm_smp_processor_id();
 
 #if defined(ARCH_HAS_DEFTERM_EARLY_PRINT)
-    arch_defterm_early_putc('G'+cpu);
+    arch_defterm_early_putc('0'+cpu);
 #endif
 
 	if (!cpu) { /* Primary CPU */

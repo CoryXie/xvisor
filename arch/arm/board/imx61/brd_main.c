@@ -27,8 +27,10 @@
 #include <vmm_host_io.h>
 #include <vmm_host_aspace.h>
 #include <vmm_stdio.h>
+#include <vmm_smp.h>
 #include <arch_board.h>
 #include <arch_timer.h>
+#include <private_timer.h>
 
 #include <imx/epit.h>
 
@@ -78,7 +80,10 @@ int __init arch_clocksource_init(void)
 
 int __cpuinit arch_clockchip_init(void)
 {
-	return epit_clockchip_init();
+    if (vmm_smp_processor_id() == 0)
+        return epit_clockchip_init();
+    else
+        return private_timer_clockchip_init();
 }
 
 int __init arch_board_final_init(void)

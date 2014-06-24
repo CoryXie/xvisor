@@ -37,9 +37,17 @@
 	scu { /* Snoop Control Unit */
 		device_type = "scu";
 		compatible = "arm,a9mpcore-priv";
-		reg = <0x00A00000 0x1000>;
+		reg = <0x00A00000 0x100>;
 	};
 
+	timer { /* Private Timer */
+		device_type = "timer";
+		compatible = "arm,a9mpcore-private-timer";
+		clock-frequency = <396000000>;
+		reg = <0x00A00600 0x100>;
+		interrupts = <27>;
+	};
+	
 	src { /* System Reset Controller (SRC) */
 		device_type = "src";
 		compatible = "fsl,imx6-src";
@@ -61,7 +69,7 @@
 		epit1 {
 	      	device_type = "timer";
 			compatible = "freescale,epit-timer";
-			reg = <0x20d0000 0x4000>;
+			reg = <0x20d0000 0x100>;
 			clock-frequency = <66000000>;
 			timer_num = <0>;
 			interrupts = <88>;
@@ -70,7 +78,7 @@
 		epit2 {
 	      	device_type = "timer";
 			compatible = "freescale,epit-timer";
-			reg = <0x20d4000 0x4000>;
+			reg = <0x20d4000 0x100>;
 			clock-frequency = <66000000>;
 			timer_num = <1>;
 			interrupts = <89>;
