@@ -92,6 +92,19 @@ struct epit_clocksource {
 	struct vmm_clocksource clksrc;
 };
 
+static int epit_clksrc_enable(struct vmm_clocksource *cs)
+{
+	u32 temp;
+	struct epit_clocksource *ecs = cs->priv;
+    
+	vmm_writel(0xffffffff, (void *)(ecs->base + EPITLR));
+
+    vmm_writel(EPITCR_EN | EPITCR_CLKSRC_REF_HIGH | EPITCR_WAITEN,
+        (void *)(ecs->base + EPITCR));
+
+    return VMM_OK;
+}
+
 static u64 epit_clksrc_read(struct vmm_clocksource *cs)
 {
 	u32 temp;
@@ -101,7 +114,7 @@ static u64 epit_clksrc_read(struct vmm_clocksource *cs)
 	 * Get the current count. As the timer is decrementing we 
 	 * invert the result.
 	 */
-	temp = ~vmm_readl((void *)(ecs->base + EPITCNR));
+	temp = ~ vmm_readl((void *)(ecs->base + EPITCNR));
 
 	/*
 	 * if the timer wrapped around we increase the high 32 bits part
@@ -158,6 +171,7 @@ int __init epit_clocksource_init(void)
 	ecs->clksrc.name = node->name;
 	ecs->clksrc.rating = 300;
 	ecs->clksrc.read = epit_clksrc_read;
+    ecs->clksrc.enable = epit_clksrc_enable;
 	ecs->clksrc.mask = VMM_CLOCKSOURCE_MASK(32);
 	vmm_clocks_calc_mult_shift(&ecs->clksrc.mult,
 				   &ecs->clksrc.shift,
