@@ -23,12 +23,8 @@
 #ifndef __GIC_CONFIG_H__
 #define __GIC_CONFIG_H__
 
-#define GIC_NR_IRQS		256
-#if defined(CONFIG_CPU_CORTEX_A9)
-#define GIC_IRQ_START		29
-#else
-#define GIC_IRQ_START		26
-#endif
+#define GIC_NR_IRQS		(128+32)
+#define GIC_IRQ_START	27
 #define GIC_MAX_NR		1
 
 #endif /* __GIC_CONFIG_H__ */

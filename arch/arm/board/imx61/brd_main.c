@@ -80,10 +80,7 @@ int __init arch_clocksource_init(void)
 
 int __cpuinit arch_clockchip_init(void)
 {
-    if (vmm_smp_processor_id() == 0)
-        return epit_clockchip_init();
-    else
-        return private_timer_clockchip_init();
+    return private_timer_clockchip_init();
 }
 
 int __init arch_board_final_init(void)

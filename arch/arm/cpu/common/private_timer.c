@@ -216,11 +216,14 @@ static void private_timer_set_mode(enum vmm_clockchip_mode mode,
 
 	switch (mode) {
 	case VMM_CLOCKCHIP_MODE_PERIODIC:
-        vmm_writel(PRI_TIMER_CTRL_AUTO_RELOAD |
+        vmm_printf("private_timer_set_mode - VMM_CLOCKCHIP_MODE_PERIODIC\n");
+        vmm_writel(PRI_TIMER_CTRL_ENABLE |
+                   PRI_TIMER_CTRL_AUTO_RELOAD |
                    PRI_TIMER_CTRL_IRQ_ENABLE,
                (void *)(ecc->base + PRIVATE_TIMER_REG_CONTROL));
 		break;
 	case VMM_CLOCKCHIP_MODE_ONESHOT:
+        vmm_printf("private_timer_set_mode - VMM_CLOCKCHIP_MODE_ONESHOT\n");
 		/*
 		 * Do not put overhead of interrupt enable/disable into
 		 * private_timer_set_next_event(), the core has about 4 minutes
@@ -228,7 +231,8 @@ static void private_timer_set_mode(enum vmm_clockchip_mode mode,
 		 * mode switching
 		 */
 		arch_cpu_irq_save(flags);
-        vmm_writel(PRI_TIMER_CTRL_IRQ_ENABLE,
+        vmm_writel(PRI_TIMER_CTRL_ENABLE | 
+                   PRI_TIMER_CTRL_IRQ_ENABLE,
                (void *)(ecc->base + PRIVATE_TIMER_REG_CONTROL));
 		arch_cpu_irq_restore(flags);
 		break;
@@ -246,10 +250,11 @@ static void private_timer_set_mode(enum vmm_clockchip_mode mode,
 static vmm_irq_return_t private_timer_timer_interrupt(int irq, void *dev)
 {
 	struct private_timer_clockchip *ecc = dev;
-
+    
 	private_timer_irq_acknowledge(ecc);
 
-	ecc->clkchip.event_handler(&ecc->clkchip);
+	if (ecc->clkchip.event_handler)
+        ecc->clkchip.event_handler(&ecc->clkchip);
 
 	return VMM_IRQ_HANDLED;
 }
@@ -257,52 +262,47 @@ static vmm_irq_return_t private_timer_timer_interrupt(int irq, void *dev)
 int __cpuinit private_timer_clockchip_init(void)
 {
 	int rc = VMM_ENODEV;
-	u32 clock, hirq;
+	u32 clock, hirq, ctrl;
     u32 cpu = vmm_smp_processor_id();
 	struct vmm_devtree_node *node;
 	struct private_timer_clockchip *ecc;
     
-    vmm_printf("q\n");
-
 	/* find the first private timer compatible node */
 	node = vmm_devtree_find_compatible(NULL, NULL, "arm,a9mpcore-private-timer");
 	if (!node) {
-        vmm_printf("q\n");
 		goto fail;
 	}
-    vmm_printf("w\n");
     
 	/* Read clock frequency */
 	rc = vmm_devtree_clock_frequency(node, &clock);
 	if (rc) {
 		goto fail;
 	}
-    vmm_printf("e\n");
 
 	/* Read irq attribute */
 	rc = vmm_devtree_irq_get(node, &hirq, 0);
 	if (rc) {
 		goto fail;
-	}
-    vmm_printf("r\n");
+	}    
 
 	/* allocate our struct */
 	ecc = &timer_clockchip[cpu];
-
+    
+    memset(ecc, 0, sizeof(struct private_timer_clockchip));
+    
 	/* Map timer registers */
 	rc = vmm_devtree_regmap(node, &ecc->base, 0);
 	if (rc) {
 		goto regmap_fail;
 	}
-    vmm_printf("ecc->base %p\n",ecc->base);
 
 	/* Setup clockchip */
 	ecc->clkchip.name = node->name;
 	ecc->clkchip.hirq = hirq;
-	ecc->clkchip.rating = 300;
+	ecc->clkchip.rating = 400;
 	ecc->clkchip.cpumask = vmm_cpumask_of(vmm_smp_processor_id());
-	ecc->clkchip.features = VMM_CLOCKCHIP_FEAT_ONESHOT | 
-                            VMM_CLOCKCHIP_FEAT_PERIODIC;
+	ecc->clkchip.features = VMM_CLOCKCHIP_FEAT_ONESHOT/* | 
+                            VMM_CLOCKCHIP_FEAT_PERIODIC*/;
 	vmm_clocks_calc_mult_shift(&ecc->clkchip.mult,
 				   &ecc->clkchip.shift,
 				   VMM_NSEC_PER_SEC, clock, 10);
@@ -313,7 +313,6 @@ int __cpuinit private_timer_clockchip_init(void)
 	ecc->clkchip.set_mode = private_timer_set_mode;
 	ecc->clkchip.set_next_event = private_timer_set_next_event;
 	ecc->clkchip.priv = ecc;
-    vmm_printf("u\n");
 
 	/*
 	 * Initialise to a known state (all timers off, and timing reset)
@@ -322,32 +321,34 @@ int __cpuinit private_timer_clockchip_init(void)
 	/*
 	 * Initialize the load register to the max value to decrement.
 	 */
-	vmm_writel(0xffffffff, (void *)(ecc->base + PRIVATE_TIMER_REG_LOAD));
-    vmm_printf("v\n");
-
+	vmm_writel(0xffff, (void *)(ecc->base + PRIVATE_TIMER_REG_LOAD));
+	vmm_writel(0xffff, (void *)(ecc->base + PRIVATE_TIMER_REG_COUNTER));
+    
 	/* Register interrupt handler */
 	rc = vmm_host_irq_register(hirq, ecc->clkchip.name,
 				   &private_timer_timer_interrupt, ecc);
 	if (rc) {
 		goto irq_fail;
 	}
-    vmm_printf("i\n");
 
 	/* Register clockchip */
 	rc = vmm_clockchip_register(&ecc->clkchip);
 	if (rc) {
 		goto register_fail;
 	}
-    vmm_printf("o\n");
 
 	/*
 	 * enable the timer, set it to the high reference clock
 	 */
-	vmm_writel(PRI_TIMER_CTRL_ENABLE | 
-	           PRI_TIMER_CTRL_IRQ_ENABLE,
-		   (void *)(ecc->base + PRIVATE_TIMER_REG_CONTROL));
-    vmm_printf("p\n");
-
+    ctrl = vmm_readl((void *)(ecc->base + PRIVATE_TIMER_REG_CONTROL));
+    #if 1
+    ctrl &= ~(PRI_TIMER_CTRL_AUTO_RELOAD);
+    #else
+    ctrl |= (PRI_TIMER_CTRL_AUTO_RELOAD);
+    #endif
+    ctrl |= PRI_TIMER_CTRL_IRQ_ENABLE;
+	vmm_writel(ctrl, (void *)(ecc->base + PRIVATE_TIMER_REG_CONTROL));
+    vmm_printf("private_timer_clockchip_init - OK\n");
 	return VMM_OK;
 
  register_fail:

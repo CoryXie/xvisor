@@ -45,7 +45,7 @@
 		compatible = "arm,a9mpcore-private-timer";
 		clock-frequency = <396000000>;
 		reg = <0x00A00600 0x100>;
-		interrupts = <27>;
+		interrupts = <29>;
 	};
 	
 	src { /* System Reset Controller (SRC) */
